@@ -6,11 +6,12 @@
 <!-- ШАБЛОН КАСТОМНОГО РОБОТА. Сделан 13.09.2026 на основе ludwig-console/index.html
      (уличный пульт, самый чистый на тот момент — otklik(), ensureConn(),
      flash(), LS-обёртка с префиксом, хак вибрации через <input type="checkbox" switch>).
-     NINJAONE-РОБОТ — заказчик NinjaOne (контакт David Protzmann), it-sa Expo & Congress 2026, Нюрнберг,
-     27–29.10.2026, Halle 7, Stand 504. С 08.10 — домашняя проба и видео для NinjaOne.
-     Мозг: prompts/roboty/ninjaone (deploy_robot.py --robot ninjaone), робот «der NinjaOne-Roboter», голос Людвига, на «Sie».
-     Копия пульта timberjacks-gastgeber (= ludwig-timberjacks = vives-bot, стенд кнопок 40/40) один в один:
-     отличаются только мозг, префикс памяти, цвет, контекст дня и служебные тексты (на «Sie»).
+     NINJAONE-РОБОТ Pete — заказчик NinjaOne (контакт David Protzmann), it-sa 2026, Нюрнберг, 27–29.10.2026, Halle 7, Stand 504.
+     Мозг: prompts/roboty/ninjaone, голос Людвига, на «Sie». С 23.10 — копия франкфуртского пульта 1b-robot (22.10):
+     ✋ ХВАТИТ / ⏭ ОТВЕЧАЙ внизу экрана, стоп глушит и усилитель, часы шлют мозгу день недели (Tag 1 = Dienstag).
+     Копия пульта ninjaone-bot (= timberjacks-gastgeber = vives-bot, стенд кнопок 40/40). Отличия: мозг, префикс памяти,
+     цвет, контекст дня, служебные тексты — и карточка «Точные фразы» ВИДИМА, с зашитыми клипами сценария (ROBOT.clips,
+     файлы clips/*.mp3): одна кнопка = реплика слово в слово, сразу, без задержки на мозг.
      ДЛЯ НОВОГО ЗАКАЗЧИКА менять: 1) блок «НАСТРОЙКА РОБОТА» (const ROBOT) в самом
      начале главного скрипта — префикс памяти, agent ID, заголовок, контекст дня,
      режимы, быстрые кнопки, служебные тексты; 2) название репозитория при выкладке
@@ -32,7 +33,7 @@
 <style>
   :root {
     --bg:#14161a; --card:#1e2128; --card2:#262a33; --text:#e8e8e8; --dim:#8a8f98;
-    /* акцент синий — NinjaOne; у Хозяина Timberjacks бирюзовый, у Короля малиновый,
+    /* акцент #5b8cff — ninjaone; у 1B голубой, у HUK жёлтый, у NinjaOne синий, у Хозяина Timberjacks бирюзовый, у Короля малиновый,
        у Fahrradfest оранжевый — на телефоне не перепутать */
     --gold:#5b8cff; --green:#2ecc71; --red:#e74c3c; --blue:#3498db; --purple:#7d5fc4; --line:#333;
   }
@@ -91,15 +92,37 @@
   .hidden { display:none !important; }
   details summary { font-size:13px; color:var(--dim); cursor:pointer; padding:4px 0; }
   .hint { font-size:11px; color:var(--dim); line-height:1.4; }
-  .banner { text-align:center; font-size:13px; padding:8px; border-radius:10px; background:#123430; color:var(--gold); }
+  .banner { position:sticky; top:0; z-index:50; text-align:center; font-size:13px; padding:8px; border-radius:10px; background:#123430; color:var(--gold); }
   /* ОТКЛИК КНОПКИ: на айфоне вибрации у веб-страниц нет, и Макс не понимал,
      нажалось или нет (08.09). Теперь кнопка на полторы секунды зеленеет и пишет, что ушло. */
   button.otklik{ background:#1e8449 !important; box-shadow:inset 0 0 0 3px #7be495; transform:scale(.97); transition:transform .08s }
   button.otklik-net{ background:#8e2020 !important; box-shadow:inset 0 0 0 3px #f08080; }
+
+  /* 22.10: карточки (из пульта 1B) */
+  .board .krow button.kueb{background:#2e7d4f}
+  .kcard{flex:1 1 100%;background:#171a21;border:1px solid #2b303b;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;scroll-margin-top:62px}
+  .kcard.kplayed{border-color:#2e7d4f;background:#152019}
+  .khead{display:flex;gap:10px;align-items:flex-start}
+  .knum{flex:none;min-width:34px;height:34px;border-radius:17px;padding:0 6px;background:var(--gold);color:#0b1638;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .kcard.kplayed .knum{background:#2e7d4f;color:#fff}
+  .kq{font-size:17px;font-weight:700;line-height:1.3;color:#fff}
+  .kru{font-size:13px;color:var(--dim);margin-top:2px}
+  .krow{display:flex;gap:7px}
+  .board .krow button.kbig{flex:1 1 auto;background:var(--purple);font-size:16px;padding:14px 12px;text-align:left}
+  .board .krow button.ken{flex:0 0 58px;background:#2d5f8f;font-size:14px;padding:14px 0}
+  .board .krow button.kdone{box-shadow:inset 0 0 0 2px #2ecc71}
+  .kfirst{font-size:12px;color:#8a8f98;margin:-3px 2px 3px;font-style:italic;line-height:1.35}
+  .kzapas{border-style:dashed}
+  .knav{position:sticky;top:0;z-index:40;flex:1 1 100%;display:flex;flex-wrap:nowrap;gap:4px;padding:6px 0;background:var(--bg)}
+  .board .knav button.knavb{flex:1 1 0;min-width:0;background:var(--card2);font-size:15px;padding:10px 0;font-weight:800}
+  #kbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:#0f1114f0;border-top:1px solid #333;max-width:480px;margin:0 auto}
+  #kbar button{flex:1;font-size:17px;padding:14px 6px;min-height:58px}
+  #kbar #kbOt{background:#b8860b}
+  body{padding-bottom:96px}
 </style>
 </head>
 <body>
-  <h1>🥷 NinjaOne-Roboter — it-sa</h1>
+  <h1>🥷 Pete — NinjaOne · it-sa</h1>
 
   <div id="status">
     <span class="dot" id="connDot"></span><span id="connText">не подключено</span>
@@ -229,8 +252,8 @@
       <div id="lastKey" class="hint"></div>
     </div>
 
-    <div class="card hidden" style="display:none">
-      <label>🔊 Точные фразы — слово-в-слово</label>
+    <div class="card">
+      <label>🔊 Реплики сценария — нажал = сказал (слово в слово)</label>
       <div class="board" id="board"></div>
       <details>
         <summary>➕ Добавить точную фразу (аудиофайл)</summary>
@@ -300,29 +323,38 @@
 // Всё остальное в файле читает ROBOT и само по себе не содержит ничего
 // специфичного для BoS-Bot. Копия под нового заказчика: новая папка/репозиторий,
 // новый префикс ns (см. предупреждение ниже), свой agent, свои режимы и кнопки.
+// записи пульта — слово в слово из teksty.json робота, голос и настройки мозга; сверены распознаванием
+const _K = {
+  akku_de: { label: "🇩🇪 Пауза · аккумулятор", data: 'clips/de/akku.mp3', hvatit: true, text: "Kurze Akku-Pause für mich – in ein paar Minuten bin ich wieder für Sie da." },
+  akku_en: { label: "🇬🇧 Пауза · аккумулятор", data: 'clips/en/akku.mp3', hvatit: true, text: "Quick battery break for me – I'll be back for you in a few minutes." },
+};
 const ROBOT = {
-  ns: 'nj1:',                                    // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
-  agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг NinjaOne-робота (deploy_robot.py --robot ninjaone)
+  ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
+  agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '08.10.2026 NinjaOne',
-  dayCtx: 'Heute ist eine Probe mit Videoaufnahme für NinjaOne, vor der it-sa 2026 in Nürnberg. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.',
+  version: '23.10.2026 NinjaOne · Pete 2',
+  dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
+  tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
 
-  // Копия пульта timberjacks-gastgeber = ludwig-fahrradfest = vives-bot (решение Макса: пульт — копия лучшего готового).
-  // Режимов и быстрых кнопок нет: задание Макс даёт голосом «я оператор…» или текстом в «ЗАДАНИЕ».
+  clips: Object.values(_K),
+  cards: [
+    { id: "zapas", nav: "+", num: "+", q: "Служебные", qru: "пауза на аккумулятор", items: [
+      { name: "Пауза · аккумулятор", dur: 5, first: "Kurze Akku-Pause für mich – in ein paar Minuten bin ich wieder für Sie da.", de: _K.akku_de, en: _K.akku_en } ] },
+  ],
+
+  // Копия пульта 1b-robot (= huk-roboter = ninjaone-bot = vives-bot, решение Макса: пульт — копия лучшего готового).
   defaultMode: null,
   modes: {},
   quick: {},
 
   // Служебные тексты — уходят по каналу ⟦REGIE⟧, гость их произнести не может.
-  // Немецкие, слово в слово с пульта Максимилиана (24.09 проверены на живом мозге через WebRTC:
-  // вопрос сквозь болтовню → ответ по делу через 7 с; гость молчал → один короткий переспрос).
   answerCue: '⟦REGIE⟧ ОТВЕЧАЙ. Antworte JETZT auf die letzten Worte des Gastes seit deiner letzten Antwort. '
            + 'Hat der Gast seit deiner letzten Antwort nichts Verständliches gesagt: erfinde nichts, begrüße nicht neu, fang kein neues Thema an — '
            + 'sag in EINEM kurzen Satz, dass du ihn bei dem Lärm nicht verstanden hast, und bitte ihn, es noch einmal zu sagen.',
   hello:  'Sprich als Erster, aber KURZ und per Sie: ein Opener aus deinem Repertoire — Gruß als NinjaOne-Roboter, ein kleiner IT-Witz, dann die Frage, was die Person beruflich macht. Höchstens drei Sätze.',
   louder: 'Du hast den Besucher nicht verstanden. Bitte ihn kurz und freundlich, per Sie, es noch einmal zu sagen.',
   bye:    'Verabschiede dich jetzt mit einem Satz, per Sie, mit einem Augenzwinkern aus deinem Repertoire, und wünsch einen schönen Messetag.',
-  ctxCue: 'Anweisung deines Teams (oft auf Russisch) — setz sie JETZT um, deine ersten Worte sind schon die Szene, auf Deutsch, ohne Bestätigung:',
+  ctxCue: 'Anweisung deines Teams (oft auf Russisch) — setz sie JETZT um, deine ersten Worte sind schon die Szene, in der Sprache des Gesprächs, ohne Bestätigung:',
 };
 document.title = 'Пульт ' + ROBOT.title;
 try{ const h=document.querySelector('h1'); if(h && ROBOT.version) h.insertAdjacentHTML('beforeend',' <small style="font-size:11px;opacity:.6;font-weight:400">v '+ROBOT.version+'</small>'); }catch{}
@@ -445,7 +477,9 @@ function uhrzeit(){
   const d=new Date();
   const hh=String(d.getHours()).padStart(2,'0');
   const mm=String(d.getMinutes()).padStart(2,'0');
-  return `Uhrzeit jetzt: ${hh}:${mm}.`;
+  const tag=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][d.getDay()];
+  const mon=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'][d.getMonth()];
+  return `Heute ist ${tag}, ${d.getDate()}. ${mon} ${d.getFullYear()}. Uhrzeit jetzt: ${hh}:${mm}.`;
 }
 let clockTimer=null;
 function clockStart(){
@@ -498,7 +532,9 @@ let clips=[]; try{ clips=JSON.parse(LS.get('clips')||'[]'); }catch{}
 const boardAudio=new Audio();
 function renderBoard(){
   const b=$('board'); b.innerHTML='';
-  if(!clips.length){ b.innerHTML='<p class="hint">Пока нет точных фраз. Добавь ниже.</p>'; }
+  // 15.10 (HUK): клипы сценария зашиты в файл (ROBOT.clips) — рисуются первыми и не удаляются
+  if(ROBOT.cards){ renderKarty(b); }
+  if(!clips.length && !(ROBOT.clips||[]).length){ b.innerHTML='<p class="hint">Пока нет точных фраз. Добавь ниже.</p>'; }
   clips.forEach((c,i)=>{
     const btn=document.createElement('button'); btn.textContent='▶ '+c.label;
     btn.onclick=()=>playClip(c);
@@ -506,28 +542,99 @@ function renderBoard(){
     b.appendChild(btn);
   });
 }
+
+// 22.10 (Макс, 1B): карточки. Заголовок крупно над кнопками, сверху — переходы к нужной карточке,
+// сыгранная карточка — зелёная. 🇩🇪 — большая кнопка, 🇬🇧 — маленькая справа (если есть английская запись).
+const _esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function renderKarty(b){
+  const nav=document.createElement('div'); nav.className='knav';
+  ROBOT.cards.forEach(k=>{ const a=document.createElement('button'); a.className='knavb'; a.textContent=k.nav;
+    a.onclick=()=>{ document.getElementById('k-'+k.id)?.scrollIntoView({behavior:'smooth',block:'start'}); }; nav.appendChild(a); });
+  b.appendChild(nav);
+  ROBOT.cards.forEach(k=>{
+    const card=document.createElement('div'); card.className='kcard'+(k.id==='zapas'?' kzapas':''); card.id='k-'+k.id;
+    card.innerHTML='<div class="khead"><span class="knum">'+_esc(k.num)+'</span><div><div class="kq">'+_esc(k.q)+'</div><div class="kru">'+_esc(k.qru)+'</div></div></div>';
+    k.items.forEach(it=>{
+      const row=document.createElement('div'); row.className='krow';
+      const big=document.createElement('button'); big.className='kbig'; big.textContent='▶ '+it.name+' · '+it.dur+' с'; big.title=it.de.label;
+      big.onclick=()=>{ playClip(it.de,big); card.classList.add('kplayed'); big.classList.add('kdone'); };
+      if(it.uebergabe) big.classList.add('kueb');
+      row.append(big);
+      if(it.en){ const en=document.createElement('button'); en.className='ken'; en.textContent='EN'; en.title=it.en.label;
+        en.onclick=()=>{ playClip(it.en,en); card.classList.add('kplayed'); en.classList.add('kdone'); }; row.append(en); }
+      card.appendChild(row);
+      const f=document.createElement('div'); f.className='kfirst'; f.textContent='«'+it.first+'»'; card.appendChild(f);
+    });
+    b.appendChild(card);
+  });
+}
+// записи — сразу под главными кнопками, а не в конце страницы
+(()=>{ try{ const bc=$('board')?.closest('.card'), after=$('hushBtn2'); if(bc&&after) after.after(bc); }catch{} })();
+// ✋ ХВАТИТ и ⏭ ОТВЕЧАЙ всегда внизу экрана — нажимают те же кнопки пульта
+(()=>{ const bar=document.createElement('div'); bar.id='kbar'; bar.innerHTML='<button id="kbOt"></button><button id="kbHv"></button>'; document.body.appendChild(bar);
+  const hv=$('kbHv'), ot=$('kbOt'); hv.onclick=e=>{ e.preventDefault(); $('stopTalk')?.click(); }; ot.onclick=e=>{ e.preventDefault(); $('answerNow')?.click(); };
+  setInterval(()=>{ const st=$('stopTalk'), an=$('answerNow'), lv=$('live'); const vis=lv && lv.style.display!=='none' && !lv.classList.contains('hidden');
+    bar.style.display=vis?'flex':'none';
+    if(st){ hv.innerHTML=st.innerHTML; hv.style.background=st.style.background||'#8e2020'; }
+    if(an){ ot.innerHTML=an.innerHTML; ot.disabled=an.disabled; } }, 250); })();
 let boardTimer=null, boardWatchdog=null;
 function releaseBoard(msg){
   clearTimeout(boardTimer); clearTimeout(boardWatchdog);
   boardPlaying=false; applyMic();
   if(msg) log(msg);
 }
-function playClip(c){
-  // во время точной фразы микрофон закрыт (робот "говорит")
-  // таймеры прошлого клипа гасим — иначе старый хвост откроет микрофон посреди нового
+// 1B (аудит 19.10): записи сцены — в память телефона сразу при открытии пульта. Сцене не нужен мозг — пусть не нужна и сеть.
+const KLIP_V='2210d';   // переозвучил запись — поменяй метку (урок эфира 21.08)
+function klipyVPamyat(){
+  const vse=(ROBOT.clips||[]).filter(c=>c.data); let gotovo=0, oshibok=0;
+  const pokaz=()=>{ const l=$('board')?.previousElementSibling;
+    if(l) l.textContent='🔊 Реплики — в памяти '+gotovo+' из '+vse.length+(oshibok?' · ⚠️ '+oshibok+' не скачались':''); };
+  vse.forEach(c=>{ if(c.blob){ gotovo++; return; }
+    fetch(c.data+'?v='+KLIP_V,{cache:'reload'}).then(r=>{ if(!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(b=>{ c.blob=URL.createObjectURL(b); gotovo++; pokaz(); }).catch(()=>{ oshibok++; pokaz(); }); });
+  pokaz();
+}
+klipyVPamyat();
+window.addEventListener('online',()=>{ if((ROBOT.clips||[]).some(c=>c.data&&!c.blob)) klipyVPamyat(); });
+let klipNomer=0, tekKlip=null;
+function golosRobota(on){   // conv.setVolume НЕ трогает усилитель — глушим оба пути
+  try{ conv?.setVolume({volume:on?1:0}); }catch{}
+  try{ if(_gain) _gain.gain.value = on?USILENIE:0; }catch{}
+}
+function ostanovitKlip(){ if(!boardPlaying && boardAudio.paused) return;
+  try{ boardAudio.pause(); }catch{} tekKlip=null; releaseBoard('⏹ Запись остановлена'); }
+function playClip(c, btn){
+  if(tekKlip===c && boardPlaying){                       // повторное нажатие на играющую запись
+    if(performance.now()-c._t < 1500) return;             // дрогнул палец — не перезапускать
+    ostanovitKlip(); if(btn) otklik(btn,'остановлено'); return;   // нажал ещё раз — стоп
+  }
+  const moj=++klipNomer; tekKlip=c; c._t=performance.now();
   clearTimeout(boardTimer); clearTimeout(boardWatchdog);
   boardPlaying=true; applyMic(); vibrate(30);
-  boardAudio.src=c.data;
-  boardAudio.play().catch(()=>releaseBoard('⚠️ Клип не проигрался: '+c.label));
-  // предохранитель: если ни ended, ни error не придут — микрофон не должен залипнуть закрытым
+  if(!c.sluzh && (agentSpeaking || otvechajDerzhit)) golosRobota(false);   // запись сцены главнее мозга
+  boardAudio.src = c.blob || (c.data+'?v='+KLIP_V);
+  boardAudio.play().then(()=>{
+    if(moj!==klipNomer) return;
+    if(btn) otklik(btn,'играет');
+    if(conv && c.text){ try{ conv.sendContextualUpdate('Du hast soeben als Aufnahme gesagt: "'+c.text+'"'); }
+                        catch(e){ log('⚠️ Заметка о записи не ушла: '+(e?.message||e)); } }
+  }).catch(e=>{
+    if(moj!==klipNomer || e?.name==='AbortError') return;   // перебито новым нажатием — слух не трогать
+    releaseBoard('⚠️ Клип не проигрался: '+c.label); flash('⚠️ Запись не сыграла: '+c.label); if(btn) otklik(btn,'не сыграла',false);
+  });
   boardWatchdog=setTimeout(()=>{ if(boardPlaying) releaseBoard('⚠️ Клип завис — микрофон разблокирован'); }, 60000);
   log('🎬 '+c.label);
 }
 boardAudio.onended=()=>{
   clearTimeout(boardTimer); clearTimeout(boardWatchdog);
-  boardTimer=setTimeout(()=>{ boardPlaying=false; applyMic(); }, TAIL_MS);
+  const byl=tekKlip; tekKlip=null;
+  boardTimer=setTimeout(()=>{ boardPlaying=false;
+    // П4 (1B): после записи СЦЕНЫ мозг глухой (✋), пока оператор не нажмёт «🔊 ПРОДОЛЖИТЬ». На стенде (tishinaPosleZapisi:false)
+    // после вопроса-триггера гость отвечает — слух открыт; ✋ только после записей с hvatit (пауза, прощание).
+    if(conv && byl && !byl.sluzh && (ROBOT.tishinaPosleZapisi!==false || byl.hvatit) && !quiet) setQuiet(true);
+    applyMic(); zhdatKoncaRechi(); }, TAIL_MS);
 };
-boardAudio.onerror=()=>releaseBoard('⚠️ Ошибка звука клипа');
+boardAudio.onerror=()=>{ tekKlip=null; releaseBoard('⚠️ Ошибка звука клипа'); flash('⚠️ Запись не сыграла'); };
 $('addClip').onclick=()=>{
   const label=$('clipLabel').value.trim(); const f=$('clipFile').files[0];
   if(!label||!f){ flash('⚠️ Нужны название и файл'); return; }
@@ -814,7 +921,7 @@ async function hush(){
   if(!conv||stopping) return;
   stopping=true;
   const btn=$('hushBtn');
-  try{ conv.setVolume({volume:0}); }catch{}       // тишина в ту же миллисекунду
+  golosRobota(false); try{ boardAudio.pause(); }catch{}       // тишина в ту же миллисекунду (и усилитель, и запись)
   btn.textContent='⏳ Останавливаю…'; vibrate([80,50,80]);
   log('⏹ Стоп — обрываю. ПАУЗА: продолжение — большой кнопкой');
   clearTimeout(reconnectTimer); reconnectTimer=null;
@@ -826,6 +933,7 @@ async function hush(){
   paused=true;
   try{ await conv.endSession(); }catch{}
   conv=null; hushed=false; agentSpeaking=false; micWanted=false;
+  boardPlaying=false; tekKlip=null; clearTimeout(boardTimer); clearTimeout(boardWatchdog);
   quiet=false; quietUI();      // СТОП сильнее «тихо»: после ПРОДОЛЖИТЬ всё как обычно
   document.body.classList.remove('s-listen','s-speak');
   btn.textContent='⏹ СТОП — замолчать';
@@ -851,9 +959,10 @@ $('hushBtn2')?.addEventListener('click', ()=>{ vibrate([90,60,90]); hush(); });
   let t=null, dolgo=false;
   function korotko(){
     if(!conv) return;
-    try{ conv.setVolume({volume:0}); }catch{}
+    golosRobota(false);
     setWanted(false);
     if(!quiet) setQuiet(true);
+    ostanovitKlip();
     vibrate([60,40,60]);
     log('✋ Хватит — молчит и не слушает. Продолжить — «ГОВОРИТЬ»');
     // РАНЬШЕ звук возвращался ровно через 1,5 секунды — и речь продолжалась
@@ -870,7 +979,7 @@ $('hushBtn2')?.addEventListener('click', ()=>{ vibrate([90,60,90]); hush(); });
   // возвращает слух и звук.
   function obratno(){
     setQuiet(false);
-    try{ conv?.setVolume({volume:1}); }catch{}
+    golosRobota(true);
     vibrate(40);
     log('🔊 Снова слушает — ХВАТИТ отжат');
   }
@@ -895,7 +1004,7 @@ function zhdatKoncaRechi(){
     const pora = performance.now() - nachalo > 30000;
     if(dogovoril || pora){
       clearInterval(zhdatKoncaRechi._t);
-      try{ conv?.setVolume({volume:1}); }catch{}
+      golosRobota(true);
     }
   }, 300);
 }
@@ -1028,7 +1137,7 @@ async function doConnect(isReconnect){
         $('modeText').textContent=speaking?'робот говорит':'тишина';
         clearTimeout(tailTimer);
         hushMaybeRelease(speaking);
-        if(speaking){ agentSpeaking=true; otpustitOtvechaj(); applyMic(); }
+        if(speaking){ agentSpeaking=true; otpustitOtvechaj(); if(boardPlaying){ if(tekKlip?.sluzh) ostanovitKlip(); else golosRobota(false); } applyMic(); }
         else {
           tailTimer=setTimeout(()=>{
             agentSpeaking=false;
@@ -1074,7 +1183,7 @@ async function doConnect(isReconnect){
     // усилитель цепляем, когда SDK уже создал свой аудио-элемент
     setTimeout(usilitZvuk, 800); setTimeout(usilitZvuk, 2500);
     clearTimeout(reconnectTimer); reconnectTimer=null;   // висящий таймер добил бы живую сессию
-    try{ conv.setVolume({volume:1}); }catch{}   // страховка: СТОП глушил в ноль
+    golosRobota(true);   // страховка: СТОП глушил в ноль (и усилитель тоже)
     reconnectTries=0;   // связь восстановилась — счётчик попыток сбрасываем
     $('reconnBanner').textContent='🔄 Связь прервалась — переподключаюсь…';
     $('reconnBanner').classList.add('hidden');
@@ -1131,7 +1240,7 @@ function handleDisconnect(){
     const ob=$('answerNow'); if(ob){ ob.disabled=false; if(otvechajBylo) ob.innerHTML=otvechajBylo; } }
   if(paused){
     // СТОП уже всё закрыл — «disconnected» от него не повод переподключаться
-    conv=null; agentSpeaking=false; boardPlaying=false; micWanted=false;
+    conv=null; agentSpeaking=false; boardPlaying=!boardAudio.paused && !boardAudio.ended; micWanted=false;
     levelStop(); document.body.classList.remove('s-listen','s-speak');
     applyMic(); return;
   }
@@ -1140,8 +1249,8 @@ function handleDisconnect(){
   // не закрыть явно, она живёт и продолжает говорить. Закрываем перед реконнектом.
   const dead=conv;
   if(dead){ try{ dead.endSession(); }catch{} }
-  conv=null; agentSpeaking=false; boardPlaying=false; hushed=false;
-  clearTimeout(boardTimer); clearTimeout(boardWatchdog);
+  conv=null; agentSpeaking=false; boardPlaying=!boardAudio.paused && !boardAudio.ended; hushed=false;
+  if(!boardPlaying){ clearTimeout(boardTimer); clearTimeout(boardWatchdog); }   // слух вернёт onended записи, а не обрыв
   // без этого экран замирал в цвете момента обрыва — красный «слушаю» держался
   // весь реконнект, хотя микрофона уже нет
   micWanted=false; document.body.classList.remove('s-listen','s-speak');
@@ -1209,7 +1318,7 @@ ptt.addEventListener('pointerdown',e=>{
   }
   // 21.09: в режиме «руки свободны» тишину тоже надо снимать, иначе микрофон
   // не откроется и кнопка выглядит сломанной.
-  if(quiet){ setQuiet(false); try{ conv?.setVolume({volume:1}); }catch{} setWanted(true); return; }
+  if(quiet){ setQuiet(false); golosRobota(true); setWanted(true); return; }
   setWanted(!micWanted);
 });
 ptt.addEventListener('pointerup',e=>{ e.preventDefault(); if(isHold()) setWanted(false); });
@@ -1542,6 +1651,7 @@ $('stopBtn').onclick=async()=>{
 
 function showLive(){ $('setup').classList.add('hidden'); $('setup').style.display='none'; $('live').classList.remove('hidden'); $('live').style.display='flex'; renderBoard(); }
 function showSetup(){
+  try{ boardAudio.pause(); }catch{}
   conv=null; micWanted=false; agentSpeaking=false; boardPlaying=false; stopArmed=false;
   clearTimeout(tailTimer); clearTimeout(toggleTimer); clearTimeout(reconnectTimer); reconnectTimer=null;
   clockStop();
