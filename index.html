@@ -233,7 +233,8 @@
       <div class="quick">
         <button id="qaHello">🗣 Заговорить первым</button>
         <button id="qaAnswer" class="hidden" style="display:none">⏭ ОТВЕЧАЙ</button><!-- 14.09: дубль спрятан, большая ОТВЕЧАЙ вверху -->
-        <button id="qaBye">👋 Завершить</button>
+        <button id="qaLouder">🔁 Не расслышал — повтори</button>
+        <button id="qaBye">👋 Завершить диалог</button>
       </div>
     </div>
 
@@ -325,8 +326,6 @@
 // новый префикс ns (см. предупреждение ниже), свой agent, свои режимы и кнопки.
 // записи пульта — слово в слово из teksty.json робота, голос и настройки мозга; сверены распознаванием
 const _K = {
-  akku_de: { label: "🇩🇪 Пауза · аккумулятор", data: 'clips/de/akku.mp3', text: "Kurze Akku-Pause für mich – in ein paar Minuten bin ich wieder für Sie da." },
-  akku_en: { label: "🇬🇧 Пауза · аккумулятор", data: 'clips/en/akku.mp3', text: "Quick battery break for me – I'll be back for you in a few minutes." },
   p1_de: { label: "🇩🇪 Приветствие 1", data: 'clips/de/p1.mp3', text: "Hallo! Ich bin Pete von NinjaOne. Kurze Frage: Ertrinken Sie auch manchmal in Tickets? Und ich meine nicht die VIP-Tickets fürs nächste Heimspiel. Was machen Sie beruflich, sind Sie selbst in der IT?" },
   p2_de: { label: "🇩🇪 Приветствие 2", data: 'clips/de/p2.mp3', text: "Guten Tag! Ich bin Pete, ein Roboter. Ich werde also nie müde, über Patches zu reden. Die Frage ist, ob Sie es werden. In welchem Bereich arbeiten Sie?" },
   p3_de: { label: "🇩🇪 Приветствие 3", data: 'clips/de/p3.mp3', text: "Willkommen! Ich bin Pete, ein Ninja, aber ein ziemlich schlechter. Mich sieht man nämlich sofort. Unsere Software arbeitet dagegen leise im Hintergrund. Was machen Sie?" },
@@ -336,7 +335,7 @@ const ROBOT = {
   ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
   agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '24.10.2026 NinjaOne · Pete 3',
+  version: '24.10.2026 NinjaOne · Pete 4',
   dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
   tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
   // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ из этих четырёх — люди вокруг
@@ -345,8 +344,7 @@ const ROBOT = {
 
   clips: Object.values(_K),
   cards: [
-    { id: "zapas", nav: "+", num: "+", q: "Служебные", qru: "пауза на аккумулятор", items: [
-      { name: "Пауза · аккумулятор", dur: 5, first: "Kurze Akku-Pause für mich – in ein paar Minuten bin ich wieder für Sie da.", de: _K.akku_de, en: _K.akku_en } ] },
+
   ],
 
   // Копия пульта 1b-robot (= huk-roboter = ninjaone-bot = vives-bot, решение Макса: пульт — копия лучшего готового).
@@ -360,7 +358,7 @@ const ROBOT = {
            + 'sag in EINEM kurzen Satz, dass du ihn bei dem Lärm nicht verstanden hast, und bitte ihn, es noch einmal zu sagen.',
   hello:  'Sprich als Erster, aber KURZ und per Sie: ein Opener aus deinem Repertoire — Gruß als NinjaOne-Roboter, ein kleiner IT-Witz, dann die Frage, was die Person beruflich macht. Höchstens drei Sätze.',
   louder: 'Du hast den Besucher nicht verstanden. Bitte ihn kurz und freundlich, per Sie, es noch einmal zu sagen.',
-  bye:    'Verabschiede dich jetzt mit einem Satz, per Sie, mit einem Augenzwinkern aus deinem Repertoire, und wünsch einen schönen Messetag.',
+  bye:    'Verabschiede dich jetzt mit einem Satz, per Sie, mit einem Augenzwinkern aus deinem Repertoire, und wünsch einen schönen Messetag. Danach ist das Gespräch beendet: wer als Nächstes spricht, ist eine neue Person — nichts aus diesem Gespräch (Name, Firma, Thema) wiederverwenden.',
   ctxCue: 'Anweisung deines Teams (oft auf Russisch) — setz sie JETZT um, deine ersten Worte sind schon die Szene, in der Sprache des Gesprächs, ohne Bestätigung:',
 };
 document.title = 'Пульт ' + ROBOT.title;
@@ -577,6 +575,8 @@ function renderKarty(b){
 }
 // записи — сразу под главными кнопками, а не в конце страницы
 (()=>{ try{ const bc=$('board')?.closest('.card'), after=$('hushBtn2'); if(bc&&after) after.after(bc); }catch{} })();
+// 24.10 (Макс): записей на экране нет — карточку записей не показываем (приветствия живут в «Заговорить первым»)
+(()=>{ try{ if(!(ROBOT.cards||[]).length){ const bc=$('board')?.closest('.card'); if(bc) bc.style.display='none'; } }catch{} })();
 // ✋ ХВАТИТ и ⏭ ОТВЕЧАЙ всегда внизу экрана — нажимают те же кнопки пульта
 (()=>{ const bar=document.createElement('div'); bar.id='kbar'; bar.innerHTML='<button id="kbOt"></button><button id="kbHv"></button>'; document.body.appendChild(bar);
   const hv=$('kbHv'), ot=$('kbOt'); hv.onclick=e=>{ e.preventDefault(); $('stopTalk')?.click(); }; ot.onclick=e=>{ e.preventDefault(); $('answerNow')?.click(); };
@@ -1606,6 +1606,7 @@ const INSTANT={
   // Кнопка «заговорить первым»: раз оператор её нажал — перед роботом ТОЧНО
   // стоит человек.
   ...((ROBOT.privetstviya||[]).length ? {} : { qaHello: ROBOT.hello }),   // 24.10: если есть записи-приветствия — кнопка играет их (ниже)
+  qaLouder: ROBOT.louder,   // 24.10 Макс: три кнопки — заговорить первым, не расслышал, завершить диалог
   qaBye: ROBOT.bye,
 };
 let instantBusy=false;
