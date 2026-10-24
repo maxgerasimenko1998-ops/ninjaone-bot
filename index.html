@@ -325,16 +325,23 @@
 // новый префикс ns (см. предупреждение ниже), свой agent, свои режимы и кнопки.
 // записи пульта — слово в слово из teksty.json робота, голос и настройки мозга; сверены распознаванием
 const _K = {
-  akku_de: { label: "🇩🇪 Пауза · аккумулятор", data: 'clips/de/akku.mp3', hvatit: true, text: "Kurze Akku-Pause für mich – in ein paar Minuten bin ich wieder für Sie da." },
-  akku_en: { label: "🇬🇧 Пауза · аккумулятор", data: 'clips/en/akku.mp3', hvatit: true, text: "Quick battery break for me – I'll be back for you in a few minutes." },
+  akku_de: { label: "🇩🇪 Пауза · аккумулятор", data: 'clips/de/akku.mp3', text: "Kurze Akku-Pause für mich – in ein paar Minuten bin ich wieder für Sie da." },
+  akku_en: { label: "🇬🇧 Пауза · аккумулятор", data: 'clips/en/akku.mp3', text: "Quick battery break for me – I'll be back for you in a few minutes." },
+  p1_de: { label: "🇩🇪 Приветствие 1", data: 'clips/de/p1.mp3', text: "Hallo! Ich bin Pete von NinjaOne. Kurze Frage: Ertrinken Sie auch manchmal in Tickets? Und ich meine nicht die VIP-Tickets fürs nächste Heimspiel. Was machen Sie beruflich, sind Sie selbst in der IT?" },
+  p2_de: { label: "🇩🇪 Приветствие 2", data: 'clips/de/p2.mp3', text: "Guten Tag! Ich bin Pete, ein Roboter. Ich werde also nie müde, über Patches zu reden. Die Frage ist, ob Sie es werden. In welchem Bereich arbeiten Sie?" },
+  p3_de: { label: "🇩🇪 Приветствие 3", data: 'clips/de/p3.mp3', text: "Willkommen! Ich bin Pete, ein Ninja, aber ein ziemlich schlechter. Mich sieht man nämlich sofort. Unsere Software arbeitet dagegen leise im Hintergrund. Was machen Sie?" },
+  p4_de: { label: "🇩🇪 Приветствие 4", data: 'clips/de/p4.mp3', text: "Hallo! Sind Sie die Person, die alle anrufen, wenn der Drucker streikt? Dann sind Sie hier genau richtig. Was genau machen Sie?" },
 };
 const ROBOT = {
   ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
   agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '23.10.2026 NinjaOne · Pete 2',
+  version: '24.10.2026 NinjaOne · Pete 3',
   dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
   tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
+  // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ из этих четырёх — люди вокруг
+  // слышат разные, не заготовку. Сразу, без мозга; мозгу уходит тихая заметка, что прозвучало.
+  privetstviya: [_K.p1_de, _K.p2_de, _K.p3_de, _K.p4_de],
 
   clips: Object.values(_K),
   cards: [
@@ -584,7 +591,7 @@ function releaseBoard(msg){
   if(msg) log(msg);
 }
 // 1B (аудит 19.10): записи сцены — в память телефона сразу при открытии пульта. Сцене не нужен мозг — пусть не нужна и сеть.
-const KLIP_V='2210d';   // переозвучил запись — поменяй метку (урок эфира 21.08)
+const KLIP_V='2410c';   // переозвучил запись — поменяй метку (урок эфира 21.08)
 function klipyVPamyat(){
   const vse=(ROBOT.clips||[]).filter(c=>c.data); let gotovo=0, oshibok=0;
   const pokaz=()=>{ const l=$('board')?.previousElementSibling;
@@ -1598,7 +1605,7 @@ $('dirBtn').onclick=async()=>{
 const INSTANT={
   // Кнопка «заговорить первым»: раз оператор её нажал — перед роботом ТОЧНО
   // стоит человек.
-  qaHello: ROBOT.hello,
+  ...((ROBOT.privetstviya||[]).length ? {} : { qaHello: ROBOT.hello }),   // 24.10: если есть записи-приветствия — кнопка играет их (ниже)
   qaBye: ROBOT.bye,
 };
 let instantBusy=false;
@@ -1619,6 +1626,21 @@ for(const id in INSTANT){
       b.textContent=was; b.disabled=false; instantBusy=false;
       otklik(b, ok?'ушло':'нет связи', ok);
     }
+  };
+}
+
+// 24.10 (Макс): «Заговорить первым» — записанное приветствие, каждый раз следующее (4 по кругу, номер помнит телефон).
+// Снимает ✋ ХВАТИТ, как раньше команда; пока запись звучит — микрофон закрыт, потом робот слушает гостя.
+if((ROBOT.privetstviya||[]).length && $('qaHello')){
+  $('qaHello').dataset.zapisi=String(ROBOT.privetstviya.length);
+  $('qaHello').onclick=()=>{
+    vibrate([35,25,35]);
+    let n=0; try{ n=parseInt(LS.get('privetN')||'0',10)||0; }catch{}
+    const c=ROBOT.privetstviya[n % ROBOT.privetstviya.length];
+    try{ LS.set('privetN', String((n+1) % ROBOT.privetstviya.length)); }catch{}
+    if(quiet) setQuiet(false);
+    playClip(c, $('qaHello'));
+    if(!conv && sessionCfg && !connecting) ensureConn();
   };
 }
 
