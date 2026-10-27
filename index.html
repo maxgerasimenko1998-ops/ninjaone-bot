@@ -339,7 +339,7 @@ const ROBOT = {
   ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
   agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '27.10.2026 NinjaOne · Pete 8',
+  version: '27.10.2026 NinjaOne · Pete 9',
   dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
   tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
   // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ по кругу (AfO — 12 с 27.10) — люди вокруг
@@ -595,7 +595,7 @@ function releaseBoard(msg){
   if(msg) log(msg);
 }
 // 1B (аудит 19.10): записи сцены — в память телефона сразу при открытии пульта. Сцене не нужен мозг — пусть не нужна и сеть.
-const KLIP_V='2710a';   // переозвучил запись — поменяй метку (урок эфира 21.08)
+const KLIP_V='2710c';   // переозвучил запись — поменяй метку (урок эфира 21.08)
 function klipyVPamyat(){
   const vse=(ROBOT.clips||[]).filter(c=>c.data); let gotovo=0, oshibok=0;
   const pokaz=()=>{ const l=$('board')?.previousElementSibling;
