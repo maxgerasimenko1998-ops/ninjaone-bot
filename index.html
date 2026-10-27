@@ -330,17 +330,21 @@ const _K = {
   p2_de: { label: "🇩🇪 Приветствие 2", data: 'clips/de/p2.mp3', text: "Guten Tag! Ich bin Pete, ein Roboter. Ich werde also nie müde, über Patches zu reden. Die Frage ist, ob Sie es werden. In welchem Bereich arbeiten Sie?" },
   p3_de: { label: "🇩🇪 Приветствие 3", data: 'clips/de/p3.mp3', text: "Willkommen! Ich bin Pete, ein Ninja, aber ein ziemlich schlechter. Mich sieht man nämlich sofort. Unsere Software arbeitet dagegen leise im Hintergrund. Was machen Sie?" },
   p4_de: { label: "🇩🇪 Приветствие 4", data: 'clips/de/p4.mp3', text: "Hallo! Sind Sie die Person, die alle anrufen, wenn der Drucker streikt? Dann sind Sie hier genau richtig. Was genau machen Sie?" },
+  p5_de: { label: "🇩🇪 Приветствие 5", data: 'clips/de/p5.mp3', text: "Hallo! Ich mache eine wichtige Umfrage: Wie viele Tools öffnen Sie morgens, bevor der erste Kaffee fertig ist? Und in welcher Rolle sind Sie unterwegs?" },
+  p6_de: { label: "🇩🇪 Приветствие 6", data: 'clips/de/p6.mp3', text: "Willkommen am NinjaOne-Stand! Ich bin Pete. Kurze Frage, bevor die nächste Verlosung startet: Ertrinken Sie auch in Tickets? Und ich meine nicht die VIP-Tickets fürs nächste Heimspiel. Was machen Sie beruflich?" },
+  p7_de: { label: "🇩🇪 Приветствие 7", data: 'clips/de/p7.mp3', text: "Hallo! Ich bin Pete von NinjaOne. Nürnberg hat tolle Bratwurst und eine tolle Security-Messe. Bei der Bratwurst können wir nicht helfen, bei der Security schon. Was machen Sie beruflich?" },
+  p8_de: { label: "🇩🇪 Приветствие 8", data: 'clips/de/p8.mp3', text: "Willkommen! Ich bin Pete. Halle sieben, Stand fünfhundertvier, das klingt fast wie ein Platz im Serverschrank. Apropos: Wie viele Server betreuen Sie?" },
 };
 const ROBOT = {
   ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
   agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '27.10.2026 NinjaOne · Pete 7',
+  version: '27.10.2026 NinjaOne · Pete 8',
   dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
   tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
-  // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ из этих четырёх — люди вокруг
+  // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ по кругу (AfO — 12 с 27.10) — люди вокруг
   // слышат разные, не заготовку. Сразу, без мозга; мозгу уходит тихая заметка, что прозвучало.
-  privetstviya: [_K.p1_de, _K.p2_de, _K.p3_de, _K.p4_de],
+  privetstviya: [_K.p1_de, _K.p2_de, _K.p3_de, _K.p4_de, _K.p5_de, _K.p6_de, _K.p7_de, _K.p8_de],
 
   clips: Object.values(_K),
   cards: [
@@ -591,7 +595,7 @@ function releaseBoard(msg){
   if(msg) log(msg);
 }
 // 1B (аудит 19.10): записи сцены — в память телефона сразу при открытии пульта. Сцене не нужен мозг — пусть не нужна и сеть.
-const KLIP_V='2410c';   // переозвучил запись — поменяй метку (урок эфира 21.08)
+const KLIP_V='2710a';   // переозвучил запись — поменяй метку (урок эфира 21.08)
 function klipyVPamyat(){
   const vse=(ROBOT.clips||[]).filter(c=>c.data); let gotovo=0, oshibok=0;
   const pokaz=()=>{ const l=$('board')?.previousElementSibling;
