@@ -339,7 +339,7 @@ const ROBOT = {
   ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
   agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '27.10.2026 NinjaOne · Pete 9',
+  version: '27.10.2026 NinjaOne · Pete 10',
   dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
   tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
   // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ по кругу (AfO — 12 с 27.10) — люди вокруг
@@ -400,7 +400,7 @@ const $ = id => document.getElementById(id);
 let otvechajDerzhit = false;          // после ОТВЕЧАЙ микрофон закрыт до начала ответа
 const OTVECHAJ_MAX_MS = 15000;        // страховка: дольше робот не молчит — вернуть слух
 let _gain=null, _ac=null, _ist=null;
-const USILENIE = 3.0;               // во сколько раз громче единицы
+const USILENIE = 4.0;   // 27.10 (it-sa, Макс: «очень тихие»): ×4 через компрессор — громче без хрипа               // во сколько раз громче единицы
 function usilitZvuk(){
   let el=null;
   try{
@@ -422,7 +422,9 @@ function usilitZvuk(){
       _ist = _ac.createMediaElementSource(el); el._istSozdan = true;
     }
     _gain = _ac.createGain(); _gain.gain.value = USILENIE;
-    _ist.connect(_gain); _gain.connect(_ac.destination);
+    const _komp = _ac.createDynamicsCompressor();   // 27.10: сжимает пики, чтобы ×4 не хрипело
+    try{ _komp.threshold.value=-12; _komp.knee.value=6; _komp.ratio.value=12; _komp.attack.value=0.003; _komp.release.value=0.15; }catch{}
+    _ist.connect(_gain); _gain.connect(_komp); _komp.connect(_ac.destination);
     el._usilenKluch = kluch;
     if(el.srcObject) el.muted = true;      // иначе звук пойдёт дважды
     log('🔊 Усилитель включён: громче в '+USILENIE+' раза');
@@ -431,6 +433,20 @@ function usilitZvuk(){
     try{ if(el){ el.muted=false; el._usilenKluch=null; } }catch{}
     log('⚠️ Усилитель не включился, звук обычный: '+(e?.message||e));
   }
+}
+// 27.10 (it-sa): на айфоне после проигранной записи (приветствие) усилитель засыпал — запись звучала, а живой голос
+// робота молчал («Заговорить первым — звук есть, на ОТВЕЧАЙ — ничего»). Будим его; не проснулся — голос напрямую.
+function zvukZhiv(){
+  try{
+    if(!_ac || _ac.state==='running') return;
+    try{ _ac.resume(); }catch{}
+    setTimeout(()=>{ try{
+      if(_ac && _ac.state!=='running'){
+        const el=[...document.querySelectorAll('audio')].find(a=>a.srcObject||a.src);
+        if(el && el.muted){ el.muted=false; el._usilenKluch=null; log('⚠️ Усилитель уснул — голос робота пошёл напрямую'); }
+      }
+    }catch{} }, 600);
+  }catch{}
 }
 const TAIL_MS = 350;      // "хвост" после речи робота (было 700 — гость успевал
                           // начать фразу в ещё закрытый микрофон, 26.08)
@@ -637,6 +653,7 @@ function playClip(c, btn){
   log('🎬 '+c.label);
 }
 boardAudio.onended=()=>{
+  zvukZhiv();   // 27.10: после записи усилитель на айфоне мог уснуть
   clearTimeout(boardTimer); clearTimeout(boardWatchdog);
   const byl=tekKlip; tekKlip=null;
   boardTimer=setTimeout(()=>{ boardPlaying=false;
@@ -1148,7 +1165,7 @@ async function doConnect(isReconnect){
         $('modeText').textContent=speaking?'робот говорит':'тишина';
         clearTimeout(tailTimer);
         hushMaybeRelease(speaking);
-        if(speaking){ agentSpeaking=true; otpustitOtvechaj(); if(boardPlaying){ if(tekKlip?.sluzh) ostanovitKlip(); else golosRobota(false); } applyMic(); }
+        if(speaking){ zvukZhiv(); agentSpeaking=true; otpustitOtvechaj(); if(boardPlaying){ if(tekKlip?.sluzh) ostanovitKlip(); else golosRobota(false); } applyMic(); }
         else {
           tailTimer=setTimeout(()=>{
             agentSpeaking=false;
