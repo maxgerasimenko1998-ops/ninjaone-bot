@@ -287,7 +287,7 @@
       <label>👤 ГОСТЬ СКАЗАЛ</label>
       <textarea id="gastInput" placeholder="по-русски"></textarea>
       <div class="row">
-        <button id="gastMic" style="flex:0 0 56px" title="Надиктовать по-русски"></button>
+        <button id="gastMic" class="hidden" style="display:none" title="Надиктовать по-русски"></button><!-- 29.10: на айфоне второй микрофон ломает звук живой сессии -->
         <button id="gastBtn">👤 ГОСТЬ СКАЗАЛ → ответь</button>
       </div>
     </div>
@@ -339,7 +339,7 @@ const ROBOT = {
   ns: 'nj1:',                                     // префикс памяти браузера — СВОЙ у каждого пульта (домен GitHub Pages общий)
   agent: 'agent_3001m4dggq45feg905xgaetm2wmf',  // мозг робота (deploy_robot.py --robot ninjaone)
   title: 'NinjaOne · it-sa',
-  version: '27.10.2026 NinjaOne · Pete 10',
+  version: '29.10.2026 NinjaOne · Pete 11',
   dayCtx: "it-sa 2026 in Nürnberg, NinjaOne-Stand, Halle 7, Stand 504. Behandle jeden, der mit dir spricht, wie einen Besucher am NinjaOne-Stand — per Sie, bis er dich duzt.",
   tishinaPosleZapisi: false,   // стенд: после записи робот слушает ответ гостя (у 1B после записи сцены — ✋)
   // 24.10 (Макс): «Заговорить первым» = записанное приветствие, каждый раз СЛЕДУЮЩЕЕ по кругу (AfO — 12 с 27.10) — люди вокруг
@@ -400,7 +400,7 @@ const $ = id => document.getElementById(id);
 let otvechajDerzhit = false;          // после ОТВЕЧАЙ микрофон закрыт до начала ответа
 const OTVECHAJ_MAX_MS = 15000;        // страховка: дольше робот не молчит — вернуть слух
 let _gain=null, _ac=null, _ist=null;
-const USILENIE = 4.0;   // 27.10 (it-sa, Макс: «очень тихие»): ×4 через компрессор — громче без хрипа               // во сколько раз громче единицы
+const USILENIE = 5.2;   // 27.10 ×4, 29.10 +30% (Макс: «очень тихие») — через компрессор, чтобы не хрипело               // во сколько раз громче единицы
 function usilitZvuk(){
   let el=null;
   try{
@@ -436,6 +436,16 @@ function usilitZvuk(){
 }
 // 27.10 (it-sa): на айфоне после проигранной записи (приветствие) усилитель засыпал — запись звучала, а живой голос
 // робота молчал («Заговорить первым — звук есть, на ОТВЕЧАЙ — ничего»). Будим его; не проснулся — голос напрямую.
+let zvukNapryamuyu=false;
+// 29.10: усилитель просыпается от ЛЮБОГО касания экрана (на айфоне будить звук можно только касанием),
+// а когда проснулся — голос снова идёт через него, без двойного звука и без «громко секунду, потом тихо».
+document.addEventListener('pointerdown', ()=>{ try{ if(_ac && _ac.state!=='running') _ac.resume(); }catch{} }, true);
+setInterval(()=>{ try{
+  if(!zvukNapryamuyu || !_ac || _ac.state!=='running') return;
+  const el=[...document.querySelectorAll('audio')].find(a=>a.srcObject||a.src);
+  zvukNapryamuyu=false;
+  if(el){ el._usilenKluch=null; usilitZvuk(); log('🔊 Усилитель снова в деле'); }
+}catch{} }, 1000);
 function zvukZhiv(){
   try{
     if(!_ac || _ac.state==='running') return;
@@ -443,7 +453,7 @@ function zvukZhiv(){
     setTimeout(()=>{ try{
       if(_ac && _ac.state!=='running'){
         const el=[...document.querySelectorAll('audio')].find(a=>a.srcObject||a.src);
-        if(el && el.muted){ el.muted=false; el._usilenKluch=null; log('⚠️ Усилитель уснул — голос робота пошёл напрямую'); }
+        if(el && el.muted){ el.muted=false; el._usilenKluch=null; zvukNapryamuyu=true; log('⚠️ Усилитель уснул — голос робота пошёл напрямую'); }
       }
     }catch{} }, 600);
   }catch{}
